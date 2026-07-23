@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { shopApi } from '../../lib/shop-api'
-import { useShop } from '../../context/ShopContext'
+import { useCart } from '../../context/CartContext'
 import { money } from '../../lib/format'
 import { ErrorNote, Spinner, Badge } from '../../components/ui'
 
@@ -16,7 +16,7 @@ const SOURCE_NOTE = {
 
 export default function ProductPage() {
   const { id } = useParams()
-  const { addToCart } = useShop()
+  const { addToCart } = useCart()
   const [product, setProduct] = useState(null)
   const [quantity, setQuantity] = useState(1)
   const [error, setError] = useState('')

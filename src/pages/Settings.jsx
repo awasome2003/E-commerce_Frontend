@@ -1,13 +1,13 @@
 import { useEffect, useState } from 'react'
 import { api } from '../lib/api'
-import { useAuth } from '../context/AuthContext'
+import { useSession } from '../context/SessionContext'
 import { PageHeader, ErrorNote, Spinner, Badge } from '../components/ui'
 import DeliverySettings from './DeliverySettings'
 
 const ACTIONS = ['create', 'read', 'update', 'delete']
 
 export default function Settings() {
-  const { can, user } = useAuth()
+  const { can, user } = useSession()
   const editable = can('Settings', 'update')
 
   const [data, setData] = useState(null)

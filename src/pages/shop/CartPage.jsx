@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { useShop } from '../../context/ShopContext'
+import { useCart } from '../../context/CartContext'
 import { money } from '../../lib/format'
 import { ErrorNote, Spinner, Badge } from '../../components/ui'
 
@@ -13,7 +13,7 @@ const SOURCE_NOTE = {
 }
 
 export default function CartPage() {
-  const { cart, updateQuantity, removeItem } = useShop()
+  const { cart, updateQuantity, removeItem } = useCart()
   const navigate = useNavigate()
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(null)

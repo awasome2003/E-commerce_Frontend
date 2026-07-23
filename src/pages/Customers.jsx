@@ -82,7 +82,7 @@ export default function Customers() {
                   <td className="right">{c._count.orders}</td>
                   <td className="right">{c._count.user_outlets}</td>
                   <td className="right">
-                    <Link to={`/customers/${c.id}`} className="link">
+                    <Link to={`/admin/customers/${c.id}`} className="link">
                       Open
                     </Link>
                   </td>

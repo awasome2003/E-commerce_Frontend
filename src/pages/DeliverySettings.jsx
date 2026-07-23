@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { api } from '../lib/api'
 import { money } from '../lib/format'
-import { useAuth } from '../context/AuthContext'
+import { useSession } from '../context/SessionContext'
 import { ErrorNote, Spinner, Badge } from '../components/ui'
 
 const MODE_HELP = {
@@ -19,7 +19,7 @@ const MODE_LABEL = {
 }
 
 export default function DeliverySettings() {
-  const { can } = useAuth()
+  const { can } = useSession()
   const editable = can('Settings', 'update')
 
   const [settings, setSettings] = useState(null)

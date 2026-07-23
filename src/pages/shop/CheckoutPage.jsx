@@ -1,13 +1,13 @@
 import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { shopApi } from '../../lib/shop-api'
-import { useShop } from '../../context/ShopContext'
+import { useCart } from '../../context/CartContext'
 import { money } from '../../lib/format'
 import { ErrorNote, Spinner } from '../../components/ui'
 import OutletsPage from './OutletsPage'
 
 export default function CheckoutPage() {
-  const { cart, refreshCart } = useShop()
+  const { cart, refreshCart } = useCart()
   const navigate = useNavigate()
 
   const [outlets, setOutlets] = useState(null)

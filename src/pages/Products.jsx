@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { api } from '../lib/api'
 import { money } from '../lib/format'
-import { useAuth } from '../context/AuthContext'
+import { useSession } from '../context/SessionContext'
 import { PageHeader, Pagination, Badge, ErrorNote, Spinner } from '../components/ui'
 
 /** Debounce keeps a 1,700-row catalogue from firing a query per keystroke. */
@@ -16,7 +16,7 @@ function useDebounced(value, delay = 350) {
 }
 
 export default function Products() {
-  const { can } = useAuth()
+  const { can } = useSession()
   const [data, setData] = useState(null)
   const [error, setError] = useState('')
   const [categories, setCategories] = useState([])
@@ -51,7 +51,13 @@ export default function Products() {
 
   return (
     <>
-      <PageHeader title="Products" subtitle="Catalogue, pricing and tax details" />
+      <PageHeader title="Products" subtitle="Catalogue, pricing and tax details">
+        {can('Products', 'create') && (
+          <Link to="/admin/products/new" className="btn btn-primary btn-sm">
+            New product
+          </Link>
+        )}
+      </PageHeader>
 
       <div className="filters">
         <input
@@ -128,7 +134,7 @@ export default function Products() {
                     </Badge>
                   </td>
                   <td className="right">
-                    <Link to={`/products/${p.id}`} className="link">
+                    <Link to={`/admin/products/${p.id}`} className="link">
                       {can('Products', 'update') ? 'Edit' : 'View'}
                     </Link>
                   </td>

@@ -2,14 +2,14 @@ import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { api } from '../lib/api'
 import { money, dateTime, fullName, statusLabel } from '../lib/format'
-import { useAuth } from '../context/AuthContext'
+import { useSession } from '../context/SessionContext'
 import { PageHeader, StatusBadge, Badge, ErrorNote, Spinner } from '../components/ui'
 
 const PIPELINE = ['Placed', 'Packed', 'Dispatched', 'Out_for_delivery', 'Delivered']
 
 export default function OrderDetail() {
   const { id } = useParams()
-  const { can } = useAuth()
+  const { can } = useSession()
   const editable = can('Orders', 'update')
 
   const [order, setOrder] = useState(null)
@@ -54,7 +54,7 @@ export default function OrderDetail() {
   return (
     <>
       <PageHeader title={`Order #${order.id}`} subtitle={dateTime(order.created_at)}>
-        <Link to="/orders" className="btn btn-ghost btn-sm">
+        <Link to="/admin/orders" className="btn btn-ghost btn-sm">
           Back to orders
         </Link>
       </PageHeader>
@@ -145,7 +145,7 @@ export default function OrderDetail() {
               <div><dt>GST</dt><dd>{order.users?.gst_number || '—'}</dd></div>
               <div><dt>Credit limit</dt><dd>{money(order.users?.credit_limit)}</dd></div>
             </dl>
-            <Link to={`/customers/${order.users?.id}`} className="link">
+            <Link to={`/admin/customers/${order.users?.id}`} className="link">
               View customer
             </Link>
           </section>

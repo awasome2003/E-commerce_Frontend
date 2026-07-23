@@ -1,25 +1,10 @@
 import { ApiError } from './api'
+import { getToken } from './token'
 
 const BASE_URL = import.meta.env.VITE_API_URL || '/api'
 
-/**
- * The storefront keeps its own token under its own key.
- *
- * Staff and customers are different audiences with different logins, and one
- * email in this database belongs to both an admin and a customer. Sharing a
- * token key would mean signing into the shop silently signs you out of the panel
- * — and worse, could leave the wrong identity in play.
- */
-const TOKEN_KEY = 'tjuk_shop_token'
-
-export function getShopToken() {
-  return localStorage.getItem(TOKEN_KEY)
-}
-
-export function setShopToken(token) {
-  if (token) localStorage.setItem(TOKEN_KEY, token)
-  else localStorage.removeItem(TOKEN_KEY)
-}
+// The storefront shares the app's single session — see lib/token.js.
+const getShopToken = getToken
 
 async function request(path, { method = 'GET', body, params } = {}) {
   const headers = {}
@@ -43,13 +28,15 @@ async function request(path, { method = 'GET', body, params } = {}) {
   if (res.status === 204) return null
 
   const data = await res.json().catch(() => ({}))
-  if (!res.ok) throw new ApiError(data.message || `Request failed (${res.status})`, res.status)
+  if (!res.ok) {
+    throw new ApiError(data.message || `Request failed (${res.status})`, res.status, data)
+  }
   return data
 }
 
 export const shopApi = {
-  login: (email, password) => request('/shop/auth/login', { method: 'POST', body: { email, password } }),
-  register: (body) => request('/shop/auth/register', { method: 'POST', body }),
+  // Sign-in and registration live on the shared session (lib/api.js) — the
+  // storefront no longer has its own door.
   me: () => request('/shop/me'),
 
   filters: () => request('/shop/filters'),
@@ -67,6 +54,14 @@ export const shopApi = {
   quoteCheckout: (outlet_id) => request('/shop/checkout/quote', { params: { outlet_id } }),
   checkout: (outlet_id, phone_id) => request('/shop/checkout', { method: 'POST', body: { outlet_id, phone_id } }),
 
+  listRequests: () => request('/shop/requests'),
+  getRequest: (id) => request(`/shop/requests/${id}`),
+  createRequest: (body) => request('/shop/requests', { method: 'POST', body }),
+  cancelRequest: (id) => request(`/shop/requests/${id}`, { method: 'DELETE' }),
+
   listOrders: () => request('/shop/orders'),
   getOrder: (id) => request(`/shop/orders/${id}`),
+
+  listNotifications: () => request('/shop/notifications'),
+  markNotificationsRead: () => request('/shop/notifications/read', { method: 'POST' }),
 }

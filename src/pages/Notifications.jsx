@@ -87,7 +87,7 @@ export default function Notifications() {
                   </td>
                   <td>
                     {n.order_id ? (
-                      <Link to={`/orders/${n.order_id}`} className="link">
+                      <Link to={`/admin/orders/${n.order_id}`} className="link">
                         #{n.order_id}
                       </Link>
                     ) : (

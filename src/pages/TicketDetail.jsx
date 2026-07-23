@@ -2,12 +2,12 @@ import { useEffect, useState, useRef } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { api } from '../lib/api'
 import { dateTime, fullName, money } from '../lib/format'
-import { useAuth } from '../context/AuthContext'
+import { useSession } from '../context/SessionContext'
 import { PageHeader, ErrorNote, Spinner } from '../components/ui'
 
 export default function TicketDetail() {
   const { id } = useParams()
-  const { user, can } = useAuth()
+  const { user, can } = useSession()
   const canReply = can('Support', 'create')
   const canSetStatus = can('Support', 'update')
 
@@ -67,7 +67,7 @@ export default function TicketDetail() {
         title={ticket.ticket_subject}
         subtitle={`Ticket #${ticket.ticket_number ?? ticket.id} · raised ${dateTime(ticket.created_at)}`}
       >
-        <Link to="/tickets" className="btn btn-ghost btn-sm">
+        <Link to="/admin/tickets" className="btn btn-ghost btn-sm">
           Back to support
         </Link>
       </PageHeader>
@@ -150,7 +150,7 @@ export default function TicketDetail() {
               <div><dt>Status</dt><dd>{status?.title || '—'}</dd></div>
             </dl>
             {ticket.users?.id && (
-              <Link to={`/customers/${ticket.users.id}`} className="link">
+              <Link to={`/admin/customers/${ticket.users.id}`} className="link">
                 View customer
               </Link>
             )}
@@ -165,7 +165,7 @@ export default function TicketDetail() {
                 <div><dt>Status</dt><dd>{ticket.orders.order_status?.replace(/_/g, ' ')}</dd></div>
                 <div><dt>Value</dt><dd>{money(ticket.orders.total_order_value)}</dd></div>
               </dl>
-              <Link to={`/orders/${ticket.orders.id}`} className="link">
+              <Link to={`/admin/orders/${ticket.orders.id}`} className="link">
                 Open order
               </Link>
             </section>

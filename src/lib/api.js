@@ -1,21 +1,22 @@
+import { getToken } from './token'
+
 const BASE_URL = import.meta.env.VITE_API_URL || '/api'
 
-const TOKEN_KEY = 'tjuk_admin_token'
+export { getToken, setToken } from './token'
 
-export function getToken() {
-  return localStorage.getItem(TOKEN_KEY)
-}
-
-export function setToken(token) {
-  if (token) localStorage.setItem(TOKEN_KEY, token)
-  else localStorage.removeItem(TOKEN_KEY)
-}
-
-/** Thrown for any non-2xx response; `status` lets callers treat 401/403 specially. */
+/**
+ * Thrown for any non-2xx response.
+ *
+ * `status` lets callers treat 401/403 specially, and `data` carries the whole
+ * response body — the 409 from an ambiguous login puts the candidate accounts
+ * there, and the login screen needs them to offer a choice.
+ */
 export class ApiError extends Error {
-  constructor(message, status) {
+  constructor(message, status, data = {}) {
     super(message)
     this.status = status
+    this.data = data
+    this.accounts = data.accounts
   }
 }
 
@@ -43,12 +44,21 @@ async function request(path, { method = 'GET', body, params } = {}) {
   if (res.status === 204) return null
 
   const data = await res.json().catch(() => ({}))
-  if (!res.ok) throw new ApiError(data.message || `Request failed (${res.status})`, res.status)
+  if (!res.ok) {
+    throw new ApiError(data.message || `Request failed (${res.status})`, res.status, data)
+  }
   return data
 }
 
 export const api = {
-  login: (email, password) => request('/auth/login', { method: 'POST', body: { email, password } }),
+  /**
+   * The one sign-in for staff and customers alike. `user_id` is only needed when
+   * a previous attempt returned 409 because the credentials matched more than
+   * one account.
+   */
+  login: (email, password, user_id) =>
+    request('/auth/login', { method: 'POST', body: { email, password, user_id } }),
+  register: (body) => request('/auth/register', { method: 'POST', body }),
   me: () => request('/auth/me'),
 
   dashboard: () => request('/dashboard'),
@@ -70,6 +80,21 @@ export const api = {
   listCustomers: (params) => request('/customers', { params }),
   getCustomer: (id) => request(`/customers/${id}`),
   getCustomerPricing: (id) => request(`/customers/${id}/pricing`),
+  addCustomerFlatPrice: (id, body) => request(`/customers/${id}/pricing/flat`, { method: 'POST', body }),
+  updateCustomerFlatPrice: (id, rowId, body) =>
+    request(`/customers/${id}/pricing/flat/${rowId}`, { method: 'PUT', body }),
+  deleteCustomerFlatPrice: (id, rowId) =>
+    request(`/customers/${id}/pricing/flat/${rowId}`, { method: 'DELETE' }),
+  addCustomerTier: (id, body) => request(`/customers/${id}/pricing/tiers`, { method: 'POST', body }),
+  updateCustomerTier: (id, rowId, body) =>
+    request(`/customers/${id}/pricing/tiers/${rowId}`, { method: 'PUT', body }),
+  deleteCustomerTier: (id, rowId) =>
+    request(`/customers/${id}/pricing/tiers/${rowId}`, { method: 'DELETE' }),
+
+  addProductTier: (id, body) => request(`/products/${id}/tiers`, { method: 'POST', body }),
+  updateProductTier: (id, rowId, body) =>
+    request(`/products/${id}/tiers/${rowId}`, { method: 'PUT', body }),
+  deleteProductTier: (id, rowId) => request(`/products/${id}/tiers/${rowId}`, { method: 'DELETE' }),
   updateCustomer: (id, body) => request(`/customers/${id}`, { method: 'PUT', body }),
 
   listTickets: (params) => request('/tickets', { params }),
@@ -78,6 +103,12 @@ export const api = {
     request(`/tickets/${id}/messages`, { method: 'POST', body: { message } }),
   updateTicketStatus: (id, ticket_status_id) =>
     request(`/tickets/${id}/status`, { method: 'PATCH', body: { ticket_status_id } }),
+
+  listRequests: (params) => request('/requests', { params }),
+  getRequest: (id) => request(`/requests/${id}`),
+  quoteRequest: (id, body) => request(`/requests/${id}/quote`, { method: 'POST', body }),
+  approveRequest: (id, body) => request(`/requests/${id}/approve`, { method: 'POST', body }),
+  rejectRequest: (id, body) => request(`/requests/${id}/reject`, { method: 'POST', body }),
 
   listCoupons: (params) => request('/coupons', { params }),
   getCoupon: (id) => request(`/coupons/${id}`),

@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { api } from '../lib/api'
 import { date } from '../lib/format'
-import { useAuth } from '../context/AuthContext'
+import { useSession } from '../context/SessionContext'
 import { PageHeader, Badge, ErrorNote, Spinner } from '../components/ui'
 
 // `unknown` means the row stores an unusable date (0000-00-00) — the banner
@@ -19,7 +19,7 @@ function toLocalInput(value) {
 const EMPTY = { title: '', link: '', image_url: '', date_from: '', date_to: '' }
 
 export default function Banners() {
-  const { can } = useAuth()
+  const { can } = useSession()
   const [rows, setRows] = useState(null)
   const [error, setError] = useState('')
   const [editing, setEditing] = useState(null)

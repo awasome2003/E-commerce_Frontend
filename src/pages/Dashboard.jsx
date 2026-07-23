@@ -79,7 +79,7 @@ export default function Dashboard() {
               {data.recent_orders.map((order) => (
                 <tr key={order.id}>
                   <td>
-                    <Link to={`/orders/${order.id}`} className="link">
+                    <Link to={`/admin/orders/${order.id}`} className="link">
                       #{order.id}
                     </Link>
                     <div className="muted-xs">{dateTime(order.created_at)}</div>

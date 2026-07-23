@@ -2,12 +2,13 @@ import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { api } from '../lib/api'
 import { money, date, fullName } from '../lib/format'
-import { useAuth } from '../context/AuthContext'
+import { useSession } from '../context/SessionContext'
 import { PageHeader, Badge, ErrorNote, Spinner } from '../components/ui'
+import NegotiatedPricing from '../components/NegotiatedPricing'
 
 export default function CustomerDetail() {
   const { id } = useParams()
-  const { can } = useAuth()
+  const { can } = useSession()
   const [customer, setCustomer] = useState(null)
   const [pricing, setPricing] = useState(null)
   const [error, setError] = useState('')
@@ -18,9 +19,15 @@ export default function CustomerDetail() {
     api.getCustomer(id).then(setCustomer).catch((err) => setError(err.message))
   }
 
+  // Named so the pricing panel can refetch after it writes, without reloading
+  // the customer record too.
+  function loadPricing() {
+    api.getCustomerPricing(id).then(setPricing).catch(() => setPricing(null))
+  }
+
   useEffect(() => {
     load()
-    api.getCustomerPricing(id).then(setPricing).catch(() => setPricing(null))
+    loadPricing()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id])
 
@@ -42,13 +49,10 @@ export default function CustomerDetail() {
   if (error && !customer) return <ErrorNote error={error} />
   if (!customer) return <Spinner />
 
-  const hasOverrides =
-    pricing && (pricing.flat_overrides.length > 0 || pricing.tiered_overrides.length > 0)
-
   return (
     <>
       <PageHeader title={fullName(customer)} subtitle={`Customer #${customer.id}`}>
-        <Link to="/customers" className="btn btn-ghost btn-sm">
+        <Link to="/admin/customers" className="btn btn-ghost btn-sm">
           Back to customers
         </Link>
       </PageHeader>
@@ -170,61 +174,19 @@ export default function CustomerDetail() {
             )}
           </section>
 
-          <section className="card">
-            <h2 className="card-title">Negotiated pricing</h2>
-            {!pricing ? (
+          {!pricing ? (
+            <section className="card">
+              <h2 className="card-title">Negotiated pricing</h2>
               <p className="muted">Loading…</p>
-            ) : !hasOverrides ? (
-              <p className="muted">
-                No overrides. This customer pays the catalogue price on every product.
-              </p>
-            ) : (
-              <>
-                {pricing.flat_overrides.length > 0 && (
-                  <>
-                    <h3 className="card-subtitle">Flat price</h3>
-                    <table className="table table-compact">
-                      <thead>
-                        <tr><th>Product</th><th className="right">Catalogue</th><th className="right">Their price</th><th>Scope</th></tr>
-                      </thead>
-                      <tbody>
-                        {pricing.flat_overrides.map((row) => (
-                          <tr key={row.id}>
-                            <td>{row.products.product_name}</td>
-                            <td className="right">{money(row.products.inst_price)}</td>
-                            <td className="right"><strong>{money(row.item_price)}</strong></td>
-                            <td><Badge tone={row.user_id ? 'violet' : 'blue'}>{row.user_id ? 'This customer' : 'Category'}</Badge></td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </>
-                )}
-
-                {pricing.tiered_overrides.length > 0 && (
-                  <>
-                    <h3 className="card-subtitle">Quantity tiers</h3>
-                    <table className="table table-compact">
-                      <thead>
-                        <tr><th>Product</th><th>Label</th><th className="right">Qty</th><th className="right">Price</th><th>Scope</th></tr>
-                      </thead>
-                      <tbody>
-                        {pricing.tiered_overrides.map((row) => (
-                          <tr key={row.id}>
-                            <td>{row.products.product_name}</td>
-                            <td>{row.label || '—'}</td>
-                            <td className="right">{row.quantity}</td>
-                            <td className="right"><strong>{money(row.price)}</strong></td>
-                            <td><Badge tone={row.user_id ? 'violet' : 'blue'}>{row.user_id ? 'This customer' : 'Category'}</Badge></td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </>
-                )}
-              </>
-            )}
-          </section>
+            </section>
+          ) : (
+            <NegotiatedPricing
+              customerId={id}
+              pricing={pricing}
+              onChanged={loadPricing}
+              can={can}
+            />
+          )}
         </div>
       </div>
     </>

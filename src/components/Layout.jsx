@@ -1,5 +1,5 @@
 import { NavLink, Outlet, useNavigate } from 'react-router-dom'
-import { useAuth } from '../context/AuthContext'
+import { useSession } from '../context/SessionContext'
 import { fullName } from '../lib/format'
 
 /**
@@ -11,6 +11,7 @@ const NAV = [
   { to: '/admin', label: 'Dashboard', module: null, end: true },
   { to: '/admin/products', label: 'Products', module: 'Products' },
   { to: '/admin/orders', label: 'Orders', module: 'Orders' },
+  { to: '/admin/requests', label: 'Requests', module: 'Requests' },
   { to: '/admin/documents', label: 'Documents', module: 'Orders' },
   { to: '/admin/customers', label: 'Customers', module: 'Customers' },
   { to: '/admin/tickets', label: 'Support', module: 'Support' },
@@ -21,12 +22,13 @@ const NAV = [
 ]
 
 export default function Layout() {
-  const { user, logout, can } = useAuth()
+  const { user, areas, logout, can } = useSession()
   const navigate = useNavigate()
 
   function handleLogout() {
     logout()
-    navigate('/admin/login', { replace: true })
+    // One door for everyone now — there is no separate staff login page.
+    navigate('/login', { replace: true })
   }
 
   const visible = NAV.filter((item) => !item.module || can(item.module, 'read'))
@@ -57,6 +59,17 @@ export default function Layout() {
             <div className="who-name">{fullName(user)}</div>
             <div className="who-role">{user?.role}</div>
           </div>
+          {/* Only for an account that also holds Storefront permission. */}
+          {areas.shop && (
+            <button
+              type="button"
+              className="btn btn-ghost btn-sm"
+              onClick={() => navigate('/')}
+              style={{ marginBottom: 8 }}
+            >
+              Go to shop
+            </button>
+          )}
           <button type="button" className="btn btn-ghost btn-sm" onClick={handleLogout}>
             Sign out
           </button>

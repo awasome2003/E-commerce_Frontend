@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { shopApi } from '../../lib/shop-api'
-import { useShop } from '../../context/ShopContext'
+import { useCart } from '../../context/CartContext'
 import { money } from '../../lib/format'
 import { Pagination, ErrorNote, Spinner, Badge } from '../../components/ui'
 
@@ -15,7 +15,7 @@ const SOURCE_NOTE = {
 }
 
 export default function Catalogue() {
-  const { addToCart } = useShop()
+  const { addToCart } = useCart()
   const [data, setData] = useState(null)
   const [filters, setFilters] = useState({ categories: [], brands: [] })
   const [error, setError] = useState('')

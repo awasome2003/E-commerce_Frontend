@@ -96,7 +96,7 @@ export default function Orders() {
                     <StatusBadge status={order.order_status} />
                   </td>
                   <td className="right">
-                    <Link to={`/orders/${order.id}`} className="link">
+                    <Link to={`/admin/orders/${order.id}`} className="link">
                       Open
                     </Link>
                   </td>

@@ -96,7 +96,7 @@ export default function Documents() {
                     <td className="right">{money(i.final_amount)}</td>
                     <td>
                       {i.order_id ? (
-                        <Link to={`/orders/${i.order_id}`} className="link">
+                        <Link to={`/admin/orders/${i.order_id}`} className="link">
                           #{i.order_id}
                         </Link>
                       ) : (
@@ -144,7 +144,7 @@ export default function Documents() {
                     <td className="right">{money(p.sub_total)}</td>
                     <td className="right">{money(p.final_amount)}</td>
                     <td>
-                      <Link to={`/orders/${p.order_id}`} className="link">
+                      <Link to={`/admin/orders/${p.order_id}`} className="link">
                         #{p.order_id}
                       </Link>
                     </td>

@@ -479,3 +479,108 @@ td .badge { margin-left: 8px; }
 .login-note { margin: 10px 0 0; text-align: center; }
 .login-card-wide { max-width: 440px; }
 .login-card-wide .field-row { gap: 12px; }
+
+/* ---------- requests ---------- */
+
+.tone-red { color: var(--red); background: var(--red-bg); }
+.note-warning { background: var(--amber-bg); color: var(--amber); }
+.btn-danger { background: var(--surface); border-color: var(--red); color: var(--red); }
+.btn-danger:not(:disabled):hover { background: var(--red-bg); }
+
+.row-between { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.row-actions { display: flex; gap: 10px; flex-wrap: wrap; }
+.input-sm { padding: 5px 8px; font-size: 13px; max-width: 120px; }
+
+/* A request line is item + quantity + remove, and must not squash the search
+   box on a phone — hence the auto-sized trailing columns. */
+.request-line {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  gap: 12px;
+  align-items: start;
+}
+.field-narrow { max-width: 90px; }
+
+.suggest { list-style: none; margin: 4px 0 0; padding: 0; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+.suggest li + li { border-top: 1px solid var(--border); }
+.suggest button {
+  width: 100%; text-align: left; padding: 8px 10px;
+  background: var(--surface); border: 0; cursor: pointer; font-size: 13px;
+}
+.suggest button:hover { background: var(--accent-soft); }
+
+@media (max-width: 640px) {
+  .request-line { grid-template-columns: 1fr; }
+  .field-narrow { max-width: none; }
+}
+
+/* ---------- inline price editing (customer overrides, product tiers) ---------- */
+
+.price-add {
+  border: 1px dashed var(--border);
+  border-radius: 10px;
+  padding: 14px;
+  margin-bottom: 16px;
+  background: #fcfcfd;
+}
+.price-add .muted { margin: 4px 0 12px; font-size: 12px; }
+
+/* ---------- storefront notifications ---------- */
+
+.shop-bell {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  color: var(--text-muted);
+  text-decoration: none;
+}
+.shop-bell:hover { background: var(--bg); color: var(--text); }
+.shop-bell.is-active { background: var(--accent-soft); color: var(--accent); }
+.bell-count {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  border-radius: 999px;
+  background: #e5484d;
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 16px;
+  text-align: center;
+  box-shadow: 0 0 0 2px var(--surface);
+}
+
+.notif-list { display: flex; flex-direction: column; gap: 10px; max-width: 720px; }
+.notif-item {
+  display: flex;
+  gap: 12px;
+  padding: 14px 16px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+}
+.notif-item.is-unread { border-color: var(--accent-soft); background: #fbfbff; }
+.notif-icon {
+  flex: none;
+  width: 40px;
+  height: 40px;
+  border-radius: 11px;
+  display: grid;
+  place-items: center;
+  background: var(--grey-bg);
+  color: var(--text-muted);
+}
+.notif-item.is-unread .notif-icon { background: var(--accent-soft); color: var(--accent); }
+.notif-icon.is-order { background: var(--blue-bg); color: var(--blue); }
+.notif-body { flex: 1; min-width: 0; }
+.notif-top { display: flex; align-items: center; gap: 8px; }
+.notif-title { font-weight: 600; font-size: 14.5px; }
+.notif-dot { width: 8px; height: 8px; border-radius: 999px; background: var(--accent); flex: none; }
+.notif-msg { margin: 3px 0 6px; color: var(--text-muted); font-size: 13.5px; line-height: 1.45; }

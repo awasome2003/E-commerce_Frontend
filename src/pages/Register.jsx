@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom'
-import { useShop } from '../../context/ShopContext'
-import { ErrorNote } from '../../components/ui'
+import { useSession } from '../context/SessionContext'
+import { ErrorNote } from '../components/ui'
 
 const EMPTY = {
   first_name: '',
@@ -12,8 +12,9 @@ const EMPTY = {
   confirm: '',
 }
 
-export default function ShopRegister() {
-  const { customer, loading, register } = useShop()
+/** Vendor self-registration. Always creates a Customer; staff are made by staff. */
+export default function Register() {
+  const { user, loading, register, homePath } = useSession()
   const navigate = useNavigate()
   const location = useLocation()
 
@@ -22,7 +23,7 @@ export default function ShopRegister() {
   const [busy, setBusy] = useState(false)
 
   if (loading) return <div className="page-loading">Loading…</div>
-  if (customer) return <Navigate to={location.state?.from?.pathname || '/'} replace />
+  if (user) return <Navigate to={location.state?.from?.pathname || homePath} replace />
 
   const set = (key, value) => setForm((prev) => ({ ...prev, [key]: value }))
 
@@ -30,8 +31,7 @@ export default function ShopRegister() {
     event.preventDefault()
     setError('')
 
-    // Checked here purely to give a better message than the server's; the server
-    // validates independently and is the one that decides.
+    // Checked here only for a friendlier message; the server validates too.
     if (form.password !== form.confirm) {
       setError('The two passwords do not match.')
       return
@@ -50,8 +50,7 @@ export default function ShopRegister() {
         phone_number: form.phone_number,
         password: form.password,
       })
-      // Registration signs you straight in — no second hurdle.
-      navigate(location.state?.from?.pathname || '/', { replace: true })
+      navigate('/', { replace: true })
     } catch (err) {
       setError(err.message)
     } finally {
@@ -64,7 +63,7 @@ export default function ShopRegister() {
       <form className="login-card login-card-wide" onSubmit={handleSubmit}>
         <div className="brand brand-lg">
           <span className="brand-mark">TJ</span>
-          <span className="brand-text">Wholesale</span>
+          <span className="brand-text">TJUK</span>
         </div>
         <p className="login-sub">Create a trade account to browse and order.</p>
 
@@ -106,8 +105,6 @@ export default function ShopRegister() {
           {busy ? 'Creating account…' : 'Create account'}
         </button>
 
-        {/* Credit terms are a commercial decision, not something a new account
-            grants itself — say so rather than let them discover it at checkout. */}
         <p className="muted-xs login-note">
           You can order straight away. Credit terms are arranged separately with our team.
         </p>

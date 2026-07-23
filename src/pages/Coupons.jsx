@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { api } from '../lib/api'
 import { money } from '../lib/format'
-import { useAuth } from '../context/AuthContext'
+import { useSession } from '../context/SessionContext'
 import { PageHeader, Badge, ErrorNote, Spinner } from '../components/ui'
 
 /**
@@ -17,7 +17,7 @@ function valueLabel(coupon) {
 const EMPTY = { code: '', title: '', description: '', discount_type: 'percent', value: '', is_active: 1 }
 
 export default function Coupons() {
-  const { can } = useAuth()
+  const { can } = useSession()
   const [rows, setRows] = useState(null)
   const [error, setError] = useState('')
   const [editing, setEditing] = useState(null)

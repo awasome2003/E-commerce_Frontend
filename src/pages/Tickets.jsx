@@ -116,7 +116,7 @@ export default function Tickets() {
                     <StatusChip status={t.master_ticket_status} />
                   </td>
                   <td className="right">
-                    <Link to={`/tickets/${t.id}`} className="link">
+                    <Link to={`/admin/tickets/${t.id}`} className="link">
                       Open
                     </Link>
                   </td>
