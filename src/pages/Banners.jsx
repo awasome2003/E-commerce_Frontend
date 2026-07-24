@@ -8,6 +8,20 @@ import { PageHeader, Badge, ErrorNote, Spinner } from '../components/ui'
 // cannot be scheduled until it is fixed.
 const TONE = { live: 'green', scheduled: 'blue', expired: 'grey', unknown: 'amber' }
 
+/**
+ * Render only http(s) URLs as href/src — a stored `javascript:`/`data:` value in
+ * an anchor href would execute on click. The API now rejects these on write; this
+ * is defence-in-depth for any legacy row.
+ */
+function safeUrl(value) {
+  try {
+    const u = new URL(value)
+    return u.protocol === 'http:' || u.protocol === 'https:' ? value : '#'
+  } catch {
+    return '#'
+  }
+}
+
 /** `date_from`/`date_to` are DATETIME; <input type="datetime-local"> wants no zone. */
 function toLocalInput(value) {
   if (!value) return ''
@@ -135,7 +149,7 @@ export default function Banners() {
         <div className="banner-grid">
           {rows.map((b) => (
             <article key={b.id} className="card banner-card">
-              <img src={b.image_url} alt="" className="banner-preview" loading="lazy" />
+              <img src={safeUrl(b.image_url)} alt="" className="banner-preview" loading="lazy" />
               <div className="banner-body">
                 <div className="card-head">
                   <strong>{b.title}</strong>
@@ -144,7 +158,7 @@ export default function Banners() {
                 <div className="muted-xs">
                   {date(b.date_from)} → {date(b.date_to)}
                 </div>
-                <a href={b.link} target="_blank" rel="noreferrer" className="muted-xs link">
+                <a href={safeUrl(b.link)} target="_blank" rel="noreferrer" className="muted-xs link">
                   {b.link.slice(0, 48)}
                   {b.link.length > 48 ? '…' : ''}
                 </a>

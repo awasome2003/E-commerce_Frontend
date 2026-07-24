@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
+import { ArrowLeft, MapPin, ChevronDown, ShoppingCart, Plus } from 'lucide-react'
 import { shopApi } from '../../lib/shop-api'
 import { useCart } from '../../context/CartContext'
 import { money } from '../../lib/format'
-import { ErrorNote, Spinner } from '../../components/ui'
+import { PageHeader, Card, Spinner, ErrorBox, EmptyState, fieldLabel, inputClass } from '../../components/shop/ui'
 import OutletsPage from './OutletsPage'
 
 export default function CheckoutPage() {
@@ -66,40 +67,36 @@ export default function CheckoutPage() {
 
   if (cart.items.length === 0) {
     return (
-      <div className="empty">
-        <h2>Your cart is empty</h2>
-        <p>
-          <Link to="/" className="link">
-            Browse products
-          </Link>
-        </p>
-      </div>
+      <EmptyState icon={ShoppingCart} title="Your cart is empty" message="Add products before checking out.">
+        <Link to="/" className="inline-flex items-center gap-2 px-5 py-2.5 bg-amber-500 hover:bg-amber-600 text-white font-semibold rounded-xl">
+          Browse products
+        </Link>
+      </EmptyState>
     )
   }
 
   const selectedOutlet = outlets.find((o) => String(o.id) === String(outletId))
 
   return (
-    <>
-      <header className="page-head">
-        <div>
-          <h1>Checkout</h1>
-          <p className="page-sub">Confirm where this order is going.</p>
-        </div>
-        <Link to="/cart" className="btn btn-ghost btn-sm">
-          Back to cart
+    <div className="space-y-5">
+      <PageHeader title="Checkout" subtitle="Confirm where this order is going.">
+        <Link to="/cart" className="inline-flex items-center gap-1.5 px-3.5 py-2 border border-slate-200 text-slate-700 text-sm font-semibold rounded-xl hover:bg-slate-50">
+          <ArrowLeft size={15} /> Back to cart
         </Link>
-      </header>
+      </PageHeader>
 
-      <ErrorNote error={error} />
+      <ErrorBox error={error} />
 
-      <div className="grid-2">
-        <section className="card">
-          <div className="card-head">
-            <h2 className="card-title">Deliver to</h2>
+      <div className="grid grid-cols-1 lg:grid-cols-5 gap-5 items-start">
+        {/* Deliver to */}
+        <Card className="lg:col-span-3 p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="font-bold text-slate-800 flex items-center gap-2">
+              <MapPin size={18} className="text-amber-500" /> Deliver to
+            </h2>
             {outlets.length > 0 && !addingOutlet && (
-              <button type="button" className="link link-btn" onClick={() => setAddingOutlet(true)}>
-                Add another outlet
+              <button onClick={() => setAddingOutlet(true)} className="inline-flex items-center gap-1 text-sm font-semibold text-amber-600 hover:text-amber-700">
+                <Plus size={15} /> Add outlet
               </button>
             )}
           </div>
@@ -115,97 +112,79 @@ export default function CheckoutPage() {
               }}
             />
           ) : (
-            <>
-              <label className="field">
-                <span>Outlet</span>
-                <select className="input" value={outletId} onChange={(e) => setOutletId(e.target.value)}>
-                  {outlets.map((o) => (
-                    <option key={o.id} value={o.id}>
-                      {o.outlet_name} — {o.outlet_address.slice(0, 40)}
-                    </option>
-                  ))}
-                </select>
-              </label>
-
-              {selectedOutlet?.outlet_phones?.length > 0 && (
-                <label className="field">
-                  <span>Contact for delivery</span>
-                  <select className="input" value={phoneId} onChange={(e) => setPhoneId(e.target.value)}>
-                    {selectedOutlet.outlet_phones.map((p) => (
-                      <option key={p.id} value={p.id}>
-                        {p.contact_person_name} · {p.phone_number}
-                      </option>
+            <div className="space-y-4">
+              <div>
+                <label className={fieldLabel}>Outlet</label>
+                <div className="relative">
+                  <select className={inputClass + ' appearance-none pr-10 cursor-pointer'} value={outletId} onChange={(e) => setOutletId(e.target.value)}>
+                    {outlets.map((o) => (
+                      <option key={o.id} value={o.id}>{o.outlet_name} — {o.outlet_address.slice(0, 40)}</option>
                     ))}
                   </select>
-                </label>
+                  <ChevronDown size={16} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                </div>
+              </div>
+
+              {selectedOutlet?.outlet_phones?.length > 0 && (
+                <div>
+                  <label className={fieldLabel}>Contact for delivery</label>
+                  <div className="relative">
+                    <select className={inputClass + ' appearance-none pr-10 cursor-pointer'} value={phoneId} onChange={(e) => setPhoneId(e.target.value)}>
+                      {selectedOutlet.outlet_phones.map((p) => (
+                        <option key={p.id} value={p.id}>{p.contact_person_name} · {p.phone_number}</option>
+                      ))}
+                    </select>
+                    <ChevronDown size={16} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                  </div>
+                </div>
               )}
 
               {selectedOutlet && (
-                <dl className="facts">
-                  <div>
-                    <dt>Address</dt>
-                    <dd>{selectedOutlet.outlet_address}</dd>
-                  </div>
-                  {selectedOutlet.outlet_gstin && (
-                    <div>
-                      <dt>GSTIN</dt>
-                      <dd>{selectedOutlet.outlet_gstin}</dd>
-                    </div>
-                  )}
-                </dl>
+                <div className="rounded-xl bg-slate-50 border border-slate-100 p-4 text-sm space-y-1.5">
+                  <div className="text-slate-500">{selectedOutlet.outlet_address}</div>
+                  {selectedOutlet.outlet_gstin && <div className="text-xs text-slate-400">GSTIN {selectedOutlet.outlet_gstin}</div>}
+                </div>
               )}
-            </>
+            </div>
           )}
-        </section>
+        </Card>
 
-        <section className="card">
-          <h2 className="card-title">Order summary</h2>
+        {/* Order summary */}
+        <Card className="lg:col-span-2 p-6 lg:sticky lg:top-4 space-y-4">
+          <h2 className="font-bold text-slate-800">Order summary</h2>
 
-          <table className="table table-compact">
-            <tbody>
-              {cart.items.map((i) => (
-                <tr key={i.id}>
-                  <td>
-                    {i.product.product_name}
-                    <div className="muted-xs">
-                      {i.quantity} × {money(i.unit_price)}
-                    </div>
-                  </td>
-                  <td className="right">{money(i.line_total)}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+          <div className="space-y-3 max-h-64 overflow-y-auto pr-1">
+            {cart.items.map((i) => (
+              <div key={i.id} className="flex items-start justify-between gap-3 text-sm">
+                <div className="min-w-0">
+                  <div className="text-slate-700 line-clamp-1">{i.product.product_name}</div>
+                  <div className="text-xs text-slate-400">{i.quantity} × {money(i.unit_price)}</div>
+                </div>
+                <span className="font-medium text-slate-700 shrink-0">{money(i.line_total)}</span>
+              </div>
+            ))}
+          </div>
 
-          <dl className="totals">
-            <div>
-              <dt>Subtotal</dt>
-              <dd>{money(quote?.cart_total ?? cart.cart_total)}</dd>
-            </div>
-            <div>
-              <dt>Delivery</dt>
-              <dd>{quote ? money(quote.delivery.amount) : '—'}</dd>
-            </div>
-            <div className="totals-grand">
-              <dt>Total</dt>
-              <dd>{money(quote?.total ?? cart.cart_total)}</dd>
+          <dl className="space-y-2.5 text-sm border-t border-slate-100 pt-4">
+            <div className="flex justify-between"><dt className="text-slate-500">Subtotal</dt><dd className="font-medium text-slate-700">{money(quote?.cart_total ?? cart.cart_total)}</dd></div>
+            <div className="flex justify-between"><dt className="text-slate-500">Delivery</dt><dd className="font-medium text-slate-700">{quote ? money(quote.delivery.amount) : '—'}</dd></div>
+            <div className="border-t border-slate-100 pt-3 flex justify-between items-baseline">
+              <dt className="font-semibold text-slate-800">Total</dt>
+              <dd className="text-xl font-bold text-slate-800">{money(quote?.total ?? cart.cart_total)}</dd>
             </div>
           </dl>
 
-          {quote?.delivery?.reason && (
-            <p className="muted-xs">{quote.delivery.reason}</p>
-          )}
+          {quote?.delivery?.reason && <p className="text-xs text-slate-400">{quote.delivery.reason}</p>}
 
           <button
-            type="button"
-            className="btn btn-primary btn-block"
             onClick={placeOrder}
             disabled={busy || !outletId}
+            className="w-full py-3.5 bg-amber-500 hover:bg-amber-600 text-white font-bold rounded-xl flex items-center justify-center gap-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {busy ? 'Placing order…' : 'Place order'}
           </button>
-        </section>
+        </Card>
       </div>
-    </>
+    </div>
   )
 }

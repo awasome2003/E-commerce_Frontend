@@ -1,0 +1,91 @@
+/* Tailwind for the storefront redesign.
+ *
+ * Deliberately imported WITHOUT preflight: the admin UI relies on its own
+ * hand-written CSS (index.css) and browser defaults, so a global reset would
+ * change it. Utilities + theme give the storefront everything it needs; the few
+ * base styles it wants (Poppins, box-sizing) are scoped to the `.sf` root in the
+ * layout, not applied globally. */
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800;900&display=swap');
+
+@layer theme, base, components, utilities;
+@import 'tailwindcss/theme.css' layer(theme);
+@import 'tailwindcss/utilities.css' layer(utilities);
+
+/* Without preflight, form controls keep their native browser chrome — most
+   visibly a dark default border on every <button>. Mirror the part of Tailwind's
+   preflight that normalises this, scoped to `.sf` and put in @layer base so an
+   explicit `border`/`bg` utility on a button or input still overrides it. */
+@layer base {
+  .sf button,
+  .sf input,
+  .sf select,
+  .sf textarea {
+    border: 0 solid;
+    font: inherit;
+    color: inherit;
+    background-color: transparent;
+  }
+  .sf button,
+  .sf [type='button'],
+  .sf [type='reset'],
+  .sf [type='submit'] {
+    cursor: pointer;
+    background-image: none;
+  }
+  .sf :disabled {
+    cursor: default;
+  }
+}
+
+@theme {
+  /* One type family for the storefront (Poppins). */
+  --font-sans: 'Poppins', ui-sans-serif, system-ui, sans-serif;
+
+  /* Brand accent = warm amber, matching the reference design. `brand-*` mirrors
+     Tailwind's amber scale so brand-* and amber-* render identically. */
+  --color-brand-50: #fffbeb;
+  --color-brand-100: #fef3c7;
+  --color-brand-200: #fde68a;
+  --color-brand-300: #fcd34d;
+  --color-brand-400: #fbbf24;
+  --color-brand-500: #f59e0b;
+  --color-brand-600: #d97706;
+  --color-brand-700: #b45309;
+  --color-brand-800: #92400e;
+  --color-brand-900: #78350f;
+
+  --radius-card: 1rem;
+  --shadow-soft: 0 1px 2px rgba(15, 23, 42, 0.04), 0 4px 16px rgba(15, 23, 42, 0.05);
+}
+
+/* Scoped storefront base — only inside a `.sf` container, so the admin app is
+   never touched. box-border here mirrors what Tailwind's preflight would do. */
+.sf,
+.sf * {
+  box-sizing: border-box;
+}
+.sf {
+  font-family: var(--font-sans);
+  color: #0f172a;
+}
+/* Without preflight, anchors keep the browser's underline + blue — reset inside
+   the storefront so links render as designed. */
+.sf a {
+  text-decoration: none;
+  color: inherit;
+}
+/* Likewise, lists keep their default disc/decimal markers and indent without
+   preflight — the storefront lays lists out with flex/spacing, never markers. */
+.sf ul,
+.sf ol {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.sf input:focus-visible,
+.sf select:focus-visible,
+.sf textarea:focus-visible {
+  outline: none;
+  border-color: #f59e0b;
+  box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.18);
+}

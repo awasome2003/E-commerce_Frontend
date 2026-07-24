@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
+import { Bell, ShoppingBag } from 'lucide-react'
 import { shopApi } from '../../lib/shop-api'
 import { dateTime } from '../../lib/format'
-import { ErrorNote, Spinner } from '../../components/ui'
+import { PageHeader, Spinner, ErrorBox, EmptyState } from '../../components/shop/ui'
 
 /**
  * The customer's own notifications — order updates, request outcomes.
@@ -10,27 +11,6 @@ import { ErrorNote, Spinner } from '../../components/ui'
  * Opening the page marks them read (clearing the header bell); the list still
  * highlights the ones that were unread when it loaded.
  */
-function BellIcon() {
-  return (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"
-      strokeLinecap="round" strokeLinejoin="round">
-      <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
-      <path d="M13.73 21a2 2 0 0 1-3.46 0" />
-    </svg>
-  )
-}
-
-function BagIcon() {
-  return (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"
-      strokeLinecap="round" strokeLinejoin="round">
-      <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z" />
-      <path d="M3 6h18" />
-      <path d="M16 10a4 4 0 0 1-8 0" />
-    </svg>
-  )
-}
-
 export default function NotificationsPage() {
   const [items, setItems] = useState(null)
   const [error, setError] = useState('')
@@ -45,52 +25,54 @@ export default function NotificationsPage() {
       .catch((err) => setError(err.message))
   }, [])
 
-  if (error) return <ErrorNote error={error} />
+  if (error) return <ErrorBox error={error} />
   if (!items) return <Spinner />
 
   return (
-    <>
-      <header className="page-head">
-        <div>
-          <h1>Notifications</h1>
-          <p className="page-sub">Updates about your requests and orders.</p>
-        </div>
-      </header>
+    <div className="space-y-5">
+      <PageHeader title="Notifications" subtitle="Updates about your requests and orders." />
 
       {items.length === 0 ? (
-        <div className="empty">
-          <h2>No notifications</h2>
-          <p>Updates about your requests and orders will appear here.</p>
-        </div>
+        <EmptyState icon={Bell} title="No notifications" message="Updates about your requests and orders will appear here." />
       ) : (
-        <div className="notif-list">
-          {items.map((n) => (
-            <article key={n.id} className={`notif-item${n.is_read ? '' : ' is-unread'}`}>
-              <span className={`notif-icon${n.order_id ? ' is-order' : ''}`}>
-                {n.order_id ? <BagIcon /> : <BellIcon />}
-              </span>
-              <div className="notif-body">
-                <div className="notif-top">
-                  <span className="notif-title">{n.title}</span>
-                  {!n.is_read && <span className="notif-dot" aria-label="unread" />}
+        <div className="space-y-2.5">
+          {items.map((n) => {
+            const Icon = n.order_id ? ShoppingBag : Bell
+            return (
+              <article
+                key={n.id}
+                className={`flex items-start gap-4 p-4 rounded-2xl border transition-colors ${
+                  n.is_read ? 'bg-white border-slate-100' : 'bg-amber-50/50 border-amber-100'
+                }`}
+              >
+                <span className={`w-10 h-10 grid place-items-center rounded-xl shrink-0 ${
+                  n.order_id ? 'bg-amber-100 text-amber-600' : 'bg-slate-100 text-slate-500'
+                }`}>
+                  <Icon size={18} />
+                </span>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2">
+                    <span className="font-semibold text-slate-800">{n.title}</span>
+                    {!n.is_read && <span className="w-2 h-2 rounded-full bg-amber-500 shrink-0" aria-label="unread" />}
+                  </div>
+                  <p className="text-sm text-slate-500 mt-0.5">{n.message}</p>
+                  <div className="text-xs text-slate-400 mt-1.5">
+                    {dateTime(n.created_at)}
+                    {n.order_id && (
+                      <>
+                        {' · '}
+                        <Link to={`/orders/${n.order_id}`} className="font-semibold text-amber-600 hover:text-amber-700">
+                          Order #{n.order_id}
+                        </Link>
+                      </>
+                    )}
+                  </div>
                 </div>
-                <p className="notif-msg">{n.message}</p>
-                <div className="muted-xs">
-                  {dateTime(n.created_at)}
-                  {n.order_id && (
-                    <>
-                      {' · '}
-                      <Link to={`/orders/${n.order_id}`} className="link">
-                        Order #{n.order_id}
-                      </Link>
-                    </>
-                  )}
-                </div>
-              </div>
-            </article>
-          ))}
+              </article>
+            )
+          })}
         </div>
       )}
-    </>
+    </div>
   )
 }

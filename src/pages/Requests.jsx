@@ -22,6 +22,49 @@ function customerName(user) {
   return name || user?.email || `Customer #${user?.id}`
 }
 
+/**
+ * Search the catalogue to attach a real product to a free-text request line.
+ * Picking one stages a link locally; it is persisted on the next "Save quote".
+ */
+function ProductLinker({ onPick }) {
+  const [q, setQ] = useState('')
+  const [results, setResults] = useState([])
+
+  async function search(term) {
+    setQ(term)
+    if (term.trim().length < 2) return setResults([])
+    try {
+      const res = await api.listProducts({ search: term, limit: 6 })
+      setResults(res.items ?? [])
+    } catch {
+      setResults([])
+    }
+  }
+
+  return (
+    <div style={{ position: 'relative', marginTop: 6, maxWidth: 320 }}>
+      <input
+        className="input"
+        style={{ padding: '6px 10px', fontSize: 13 }}
+        placeholder="🔍 Link to a catalogue product…"
+        value={q}
+        onChange={(e) => search(e.target.value)}
+      />
+      {results.length > 0 && (
+        <ul className="suggest">
+          {results.map((p) => (
+            <li key={p.id}>
+              <button type="button" onClick={() => { onPick(p); setResults([]); setQ('') }}>
+                {p.product_name} <span className="muted">#{p.id}</span>
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  )
+}
+
 function RequestCard({ request, onChanged, canQuote, canApprove }) {
   const [prices, setPrices] = useState(() =>
     Object.fromEntries(
@@ -30,10 +73,14 @@ function RequestCard({ request, onChanged, canQuote, canApprove }) {
   )
   const [reply, setReply] = useState(request.admin_reply ?? '')
   const [error, setError] = useState('')
+  const [ok, setOk] = useState('')
   const [busy, setBusy] = useState(false)
+  // Free-text lines the admin has staged a catalogue product for, not yet saved.
+  const [links, setLinks] = useState({}) // { [itemId]: { id, product_name } }
 
   const settled = request.status === 'Approved' || request.status === 'Rejected'
   const unstocked = request.product_request_items.filter((i) => !i.product_id)
+  const pendingLinks = Object.keys(links).length
   // Both are hard blockers on conversion, checked here so the button explains
   // itself instead of failing with a 400 the admin cannot act on.
   const noOutlet = !request.outlet_id
@@ -53,6 +100,7 @@ function RequestCard({ request, onChanged, canQuote, canApprove }) {
 
   async function run(action) {
     setError('')
+    setOk('')
     setBusy(true)
     try {
       const body = {
@@ -60,11 +108,23 @@ function RequestCard({ request, onChanged, canQuote, canApprove }) {
         items: request.product_request_items.map((i) => ({
           id: i.id,
           quoted_price: prices[i.id] === '' ? null : Number(prices[i.id]),
+          product_id: links[i.id]?.id, // undefined unless the admin linked one
         })),
       }
-      if (action === 'quote') await api.quoteRequest(request.id, body)
+      if (action === 'quote') {
+        await api.quoteRequest(request.id, body)
+        setLinks({})
+        setOk(
+          pendingLinks > 0
+            ? 'Saved — items linked to the catalogue. You can approve now.'
+            : 'Quote saved — the customer has been notified.',
+        )
+      }
       if (action === 'approve') await api.approveRequest(request.id, { admin_reply: reply })
-      if (action === 'reject') await api.rejectRequest(request.id, { admin_reply: reply })
+      if (action === 'reject') {
+        await api.rejectRequest(request.id, { admin_reply: reply })
+        setOk('Request rejected — the customer has been notified.')
+      }
       onChanged()
     } catch (err) {
       setError(err.message)
@@ -88,6 +148,7 @@ function RequestCard({ request, onChanged, canQuote, canApprove }) {
       </p>
 
       <ErrorNote error={error} />
+      {ok && <div className="note note-success">{ok}</div>}
 
       <table className="table table-compact">
         <thead>
@@ -99,36 +160,63 @@ function RequestCard({ request, onChanged, canQuote, canApprove }) {
           </tr>
         </thead>
         <tbody>
-          {request.product_request_items.map((item) => (
-            <tr key={item.id}>
-              <td>
-                {item.products?.product_name ?? item.product_name}{' '}
-                {item.product_id ? (
-                  <Link to={`/admin/products/${item.product_id}`} className="muted">
-                    #{item.product_id}
-                  </Link>
-                ) : (
-                  <Badge tone="amber">not in catalogue</Badge>
-                )}
-              </td>
-              <td className="right">{item.quantity}</td>
-              <td className="right">
-                {item.products ? money(item.products.inst_price) : '—'}
-              </td>
-              <td className="right">
-                <input
-                  className="input input-sm"
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  placeholder={item.products ? 'ladder price' : 'n/a'}
-                  value={prices[item.id]}
-                  disabled={settled || !canQuote || !item.product_id}
-                  onChange={(e) => setPrices((p) => ({ ...p, [item.id]: e.target.value }))}
-                />
-              </td>
-            </tr>
-          ))}
+          {request.product_request_items.map((item) => {
+            const linked = links[item.id]
+            const hasProduct = Boolean(item.product_id || linked)
+            return (
+              <tr key={item.id}>
+                <td>
+                  {item.product_id ? (
+                    <>
+                      {item.products?.product_name ?? item.product_name}{' '}
+                      <Link to={`/admin/products/${item.product_id}`} className="muted">
+                        #{item.product_id}
+                      </Link>
+                    </>
+                  ) : linked ? (
+                    <>
+                      {linked.product_name}{' '}
+                      <Badge tone="green">will link #{linked.id}</Badge>{' '}
+                      <button
+                        type="button"
+                        className="btn btn-ghost btn-sm"
+                        onClick={() => setLinks((l) => { const n = { ...l }; delete n[item.id]; return n })}
+                      >
+                        Undo
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      <div>
+                        {item.product_name} <Badge tone="amber">not in catalogue</Badge>
+                      </div>
+                      {!settled && canQuote && (
+                        <ProductLinker
+                          onPick={(p) =>
+                            setLinks((l) => ({ ...l, [item.id]: { id: p.id, product_name: p.product_name } }))
+                          }
+                        />
+                      )}
+                    </>
+                  )}
+                </td>
+                <td className="right">{item.quantity}</td>
+                <td className="right">{item.products ? money(item.products.inst_price) : '—'}</td>
+                <td className="right">
+                  <input
+                    className="input input-sm"
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    placeholder={hasProduct ? 'ladder price' : 'n/a'}
+                    value={prices[item.id]}
+                    disabled={settled || !canQuote || !hasProduct}
+                    onChange={(e) => setPrices((p) => ({ ...p, [item.id]: e.target.value }))}
+                  />
+                </td>
+              </tr>
+            )
+          })}
         </tbody>
       </table>
 
@@ -140,8 +228,14 @@ function RequestCard({ request, onChanged, canQuote, canApprove }) {
       {blockers.length > 0 && !settled && (
         <div className="note note-warning">
           This cannot become an order yet — {blockers.join(', and ')}.
-          {unstocked.length > 0 && ' Create the missing items under Products first.'}
+          {unstocked.length > 0 && ' Link each unstocked line to a catalogue product below, then Save quote.'}
           {noOutlet && ' Ask the customer to pick an outlet on their request.'}
+        </div>
+      )}
+
+      {pendingLinks > 0 && !settled && (
+        <div className="note note-muted">
+          {pendingLinks} item(s) staged to link. Click <strong>Save quote</strong> to apply, then Approve &amp; create order.
         </div>
       )}
 
