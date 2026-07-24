@@ -1,4 +1,4 @@
-import { getToken } from './token'
+import { getToken, setToken } from './token'
 
 const BASE_URL = import.meta.env.VITE_API_URL || '/api'
 
@@ -45,6 +45,18 @@ async function request(path, { method = 'GET', body, params } = {}) {
 
   const data = await res.json().catch(() => ({}))
   if (!res.ok) {
+    // A 401 on any authenticated call means the token was revoked (logout
+    // elsewhere / password change) or expired — reset to a clean signed-out
+    // state. Credential endpoints are excluded so a wrong password stays inline.
+    if (
+      res.status === 401 &&
+      token &&
+      !path.startsWith('/auth/login') &&
+      !path.startsWith('/auth/register')
+    ) {
+      setToken(null)
+      window.location.reload()
+    }
     throw new ApiError(data.message || `Request failed (${res.status})`, res.status, data)
   }
   return data
@@ -60,6 +72,9 @@ export const api = {
     request('/auth/login', { method: 'POST', body: { email, password, user_id } }),
   register: (body) => request('/auth/register', { method: 'POST', body }),
   me: () => request('/auth/me'),
+  logout: () => request('/auth/logout', { method: 'POST' }),
+  changePassword: (current_password, new_password) =>
+    request('/auth/password', { method: 'POST', body: { current_password, new_password } }),
 
   dashboard: () => request('/dashboard'),
 

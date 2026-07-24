@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react'
 import { NavLink, Outlet, useNavigate, useLocation } from 'react-router-dom'
-import { Bell, ShoppingCart } from 'lucide-react'
+import { Bell, ShoppingCart, KeyRound } from 'lucide-react'
 import { useSession } from '../context/SessionContext'
 import { useCart } from '../context/CartContext'
 import { shopApi } from '../lib/shop-api'
 import { fullName } from '../lib/format'
+import ChangePasswordModal from './ChangePasswordModal'
 
 /**
  * The storefront shell — reference "B2B food portal" look (Poppins + amber).
@@ -26,6 +27,7 @@ export default function ShopLayout() {
   const navigate = useNavigate()
   const location = useLocation()
   const [unread, setUnread] = useState(0)
+  const [showPwd, setShowPwd] = useState(false)
 
   // Refresh the unread count on every route change — clears after visiting the
   // notifications page (which marks them read).
@@ -102,6 +104,13 @@ export default function ShopLayout() {
             )}
             <span className="hidden md:block text-sm text-slate-500 max-w-[140px] truncate">{fullName(user)}</span>
             <button
+              onClick={() => setShowPwd(true)}
+              title="Change password"
+              className="w-9 h-9 grid place-items-center rounded-xl text-slate-500 hover:bg-slate-50"
+            >
+              <KeyRound size={18} />
+            </button>
+            <button
               onClick={handleLogout}
               className="px-3 py-1.5 text-sm font-semibold text-slate-700 border border-slate-200 rounded-lg hover:bg-slate-50"
             >
@@ -114,6 +123,8 @@ export default function ShopLayout() {
       <main className="flex-1 w-full max-w-[1280px] mx-auto px-5 py-7">
         <Outlet />
       </main>
+
+      {showPwd && <ChangePasswordModal onClose={() => setShowPwd(false)} />}
     </div>
   )
 }

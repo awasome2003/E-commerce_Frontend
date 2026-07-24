@@ -59,10 +59,20 @@ export function SessionProvider({ children }) {
   const register = useCallback(async (details) => accept(await api.register(details)), [accept])
 
   const logout = useCallback(() => {
+    // Best-effort server-side revocation (bumps token_version) before dropping the
+    // local token; sign-out is not blocked on the network.
+    api.logout().catch(() => {})
     setToken(null)
     setUser(null)
     setPermissions({})
     setAreas({ staff: false, shop: false })
+  }, [])
+
+  /** Change the signed-in user's password; swaps in the fresh token it returns. */
+  const changePassword = useCallback(async (currentPassword, newPassword) => {
+    const res = await api.changePassword(currentPassword, newPassword)
+    if (res?.token) setToken(res.token)
+    return res
   }, [])
 
   /** True if the signed-in role has `action` on `module`. */
@@ -76,7 +86,7 @@ export function SessionProvider({ children }) {
 
   return (
     <SessionContext.Provider
-      value={{ user, permissions, areas, loading, login, register, logout, can, homePath }}
+      value={{ user, permissions, areas, loading, login, register, logout, changePassword, can, homePath }}
     >
       {children}
     </SessionContext.Provider>
