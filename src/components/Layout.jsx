@@ -1,6 +1,8 @@
+import { useState } from 'react'
 import { NavLink, Outlet, useNavigate } from 'react-router-dom'
 import { useSession } from '../context/SessionContext'
 import { fullName } from '../lib/format'
+import MfaModal from './MfaModal'
 
 /**
  * Sidebar entries are filtered by the same permission matrix the API enforces,
@@ -24,6 +26,7 @@ const NAV = [
 export default function Layout() {
   const { user, areas, logout, can } = useSession()
   const navigate = useNavigate()
+  const [showMfa, setShowMfa] = useState(false)
 
   function handleLogout() {
     logout()
@@ -70,6 +73,14 @@ export default function Layout() {
               Go to shop
             </button>
           )}
+          <button
+            type="button"
+            className="btn btn-ghost btn-sm"
+            onClick={() => setShowMfa(true)}
+            style={{ marginBottom: 8 }}
+          >
+            {user?.mfa_enabled ? '🔒 Two-factor: on' : 'Two-factor auth'}
+          </button>
           <button type="button" className="btn btn-ghost btn-sm" onClick={handleLogout}>
             Sign out
           </button>
@@ -79,6 +90,8 @@ export default function Layout() {
       <main className="main">
         <Outlet />
       </main>
+
+      {showMfa && <MfaModal onClose={() => setShowMfa(false)} />}
     </div>
   )
 }

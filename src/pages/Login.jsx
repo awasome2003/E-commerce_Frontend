@@ -8,10 +8,11 @@ import { ErrorNote } from '../components/ui'
  *
  * There is no separate staff door: the server decides from the permission matrix
  * whether this account belongs in the admin panel or the storefront, and we route
- * accordingly.
+ * accordingly. If the account has two-factor auth on, the password step returns
+ * `mfa_required` and we ask for a code before completing the sign-in.
  */
 export default function Login() {
-  const { user, loading, login, homePath } = useSession()
+  const { user, loading, login, verifyMfa, homePath } = useSession()
   const navigate = useNavigate()
   const location = useLocation()
 
@@ -21,18 +22,29 @@ export default function Login() {
   const [busy, setBusy] = useState(false)
   // Populated when one email+password matches several accounts.
   const [choices, setChoices] = useState(null)
+  // Set once a password login returns `mfa_required`; drives the code step.
+  const [mfaToken, setMfaToken] = useState(null)
+  const [code, setCode] = useState('')
 
   if (loading) return <div className="page-loading">Loading…</div>
   if (user) return <Navigate to={location.state?.from?.pathname || homePath} replace />
+
+  function go(res) {
+    const destination = location.state?.from?.pathname || (res.areas?.staff ? '/admin' : '/')
+    navigate(destination, { replace: true })
+  }
 
   async function attempt(userId) {
     setError('')
     setBusy(true)
     try {
       const res = await login(email, password, userId)
-      const destination =
-        location.state?.from?.pathname || (res.areas?.staff ? '/admin' : '/')
-      navigate(destination, { replace: true })
+      if (res?.mfa_required) {
+        setChoices(null)
+        setMfaToken(res.mfa_token)
+      } else {
+        go(res)
+      }
     } catch (err) {
       // 409 means the credentials are valid but match more than one account.
       if (err.status === 409 && err.accounts) {
@@ -46,24 +58,72 @@ export default function Login() {
     }
   }
 
+  async function verify() {
+    setError('')
+    setBusy(true)
+    try {
+      go(await verifyMfa(mfaToken, code.trim()))
+    } catch (err) {
+      setError(err.message)
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  function backToSignIn() {
+    setMfaToken(null)
+    setCode('')
+    setPassword('')
+    setError('')
+  }
+
   return (
     <div className="login">
       <form
         className="login-card"
         onSubmit={(e) => {
           e.preventDefault()
-          attempt()
+          if (mfaToken) verify()
+          else attempt()
         }}
       >
         <div className="brand brand-lg">
           <span className="brand-mark">TJ</span>
           <span className="brand-text">TJUK</span>
         </div>
-        <p className="login-sub">Sign in to your account.</p>
+        <p className="login-sub">
+          {mfaToken ? 'Two-factor verification.' : 'Sign in to your account.'}
+        </p>
 
         <ErrorNote error={error} />
 
-        {choices ? (
+        {mfaToken ? (
+          <>
+            <div className="note note-muted">
+              Enter the 6-digit code from your authenticator app. You can also enter one of your
+              backup codes.
+            </div>
+            <label className="field">
+              <span>Verification code</span>
+              <input
+                type="text"
+                inputMode="numeric"
+                autoComplete="one-time-code"
+                className="input"
+                value={code}
+                onChange={(e) => setCode(e.target.value)}
+                autoFocus
+                required
+              />
+            </label>
+            <button type="submit" className="btn btn-primary btn-block" disabled={busy}>
+              {busy ? 'Verifying…' : 'Verify'}
+            </button>
+            <button type="button" className="link link-btn" onClick={backToSignIn}>
+              Back to sign in
+            </button>
+          </>
+        ) : choices ? (
           <>
             {/* Never guess which identity someone meant — ask. */}
             <div className="note note-muted">
@@ -114,6 +174,11 @@ export default function Login() {
               {busy ? 'Signing in…' : 'Sign in'}
             </button>
 
+            <p className="login-alt">
+              <Link to="/forgot-password" className="link">
+                Forgot your password?
+              </Link>
+            </p>
             <p className="login-alt">
               New here?{' '}
               <Link to="/register" state={location.state} className="link">

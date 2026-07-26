@@ -1,11 +1,13 @@
 import { useEffect, useState } from 'react'
 import { NavLink, Outlet, useNavigate, useLocation } from 'react-router-dom'
-import { Bell, ShoppingCart, KeyRound } from 'lucide-react'
+import { Bell, ShoppingCart, KeyRound, ShieldCheck, Database } from 'lucide-react'
 import { useSession } from '../context/SessionContext'
 import { useCart } from '../context/CartContext'
 import { shopApi } from '../lib/shop-api'
 import { fullName } from '../lib/format'
 import ChangePasswordModal from './ChangePasswordModal'
+import MfaModal from './MfaModal'
+import PrivacyModal from './PrivacyModal'
 
 /**
  * The storefront shell — reference "B2B food portal" look (Poppins + amber).
@@ -28,6 +30,8 @@ export default function ShopLayout() {
   const location = useLocation()
   const [unread, setUnread] = useState(0)
   const [showPwd, setShowPwd] = useState(false)
+  const [showMfa, setShowMfa] = useState(false)
+  const [showPrivacy, setShowPrivacy] = useState(false)
 
   // Refresh the unread count on every route change — clears after visiting the
   // notifications page (which marks them read).
@@ -104,11 +108,30 @@ export default function ShopLayout() {
             )}
             <span className="hidden md:block text-sm text-slate-500 max-w-[140px] truncate">{fullName(user)}</span>
             <button
+              onClick={() => setShowMfa(true)}
+              title="Two-factor authentication"
+              className={`relative w-9 h-9 grid place-items-center rounded-xl hover:bg-slate-50 ${
+                user?.mfa_enabled ? 'text-emerald-600' : 'text-slate-500'
+              }`}
+            >
+              <ShieldCheck size={18} />
+              {user?.mfa_enabled && (
+                <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-emerald-500 ring-2 ring-white" />
+              )}
+            </button>
+            <button
               onClick={() => setShowPwd(true)}
               title="Change password"
               className="w-9 h-9 grid place-items-center rounded-xl text-slate-500 hover:bg-slate-50"
             >
               <KeyRound size={18} />
+            </button>
+            <button
+              onClick={() => setShowPrivacy(true)}
+              title="Privacy & my data"
+              className="w-9 h-9 grid place-items-center rounded-xl text-slate-500 hover:bg-slate-50"
+            >
+              <Database size={18} />
             </button>
             <button
               onClick={handleLogout}
@@ -125,6 +148,8 @@ export default function ShopLayout() {
       </main>
 
       {showPwd && <ChangePasswordModal onClose={() => setShowPwd(false)} />}
+      {showMfa && <MfaModal onClose={() => setShowMfa(false)} />}
+      {showPrivacy && <PrivacyModal onClose={() => setShowPrivacy(false)} />}
     </div>
   )
 }

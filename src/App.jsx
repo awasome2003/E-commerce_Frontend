@@ -7,6 +7,8 @@ import ShopLayout from './components/ShopLayout'
 
 import Login from './pages/Login'
 import Register from './pages/Register'
+import ForgotPassword from './pages/ForgotPassword'
+import ResetPassword from './pages/ResetPassword'
 import Dashboard from './pages/Dashboard'
 import Products from './pages/Products'
 import ProductEdit from './pages/ProductEdit'
@@ -52,6 +54,8 @@ export default function App() {
           <Routes>
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
+            <Route path="/forgot-password" element={<ForgotPassword />} />
+            <Route path="/reset-password" element={<ResetPassword />} />
 
             {/* ------------------------------------------------ staff area */}
             <Route

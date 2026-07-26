@@ -76,6 +76,25 @@ export const api = {
   changePassword: (current_password, new_password) =>
     request('/auth/password', { method: 'POST', body: { current_password, new_password } }),
 
+  // Opt-in TOTP two-factor auth.
+  verifyMfa: (mfa_token, code) =>
+    request('/auth/mfa/verify', { method: 'POST', body: { mfa_token, code } }),
+  mfaSetup: () => request('/auth/mfa/setup', { method: 'POST' }),
+  mfaEnable: (code) => request('/auth/mfa/enable', { method: 'POST', body: { code } }),
+  mfaDisable: (password, code) =>
+    request('/auth/mfa/disable', { method: 'POST', body: { password, code } }),
+
+  // DPDP data-principal rights (self-service, over one's own account).
+  getMyProfile: () => request('/shop/account/profile'),
+  updateMyProfile: (fields) => request('/shop/account/profile', { method: 'PATCH', body: fields }),
+  exportMyData: () => request('/shop/account/export'),
+  eraseAccount: (password) => request('/shop/account/erasure', { method: 'POST', body: { password } }),
+
+  // Forgot / reset password (pre-auth).
+  forgotPassword: (email) => request('/auth/forgot-password', { method: 'POST', body: { email } }),
+  resetPassword: (token, new_password) =>
+    request('/auth/reset-password', { method: 'POST', body: { token, new_password } }),
+
   dashboard: () => request('/dashboard'),
 
   listProducts: (params) => request('/products', { params }),

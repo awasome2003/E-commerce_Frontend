@@ -49,10 +49,22 @@ export function SessionProvider({ children }) {
 
   /**
    * Sign in. Pass `userId` only to resolve a 409 where the credentials matched
-   * more than one account.
+   * more than one account. If the account has MFA on, the server returns
+   * `{ mfa_required, mfa_token }` and NO session — the caller then completes the
+   * second factor via [verifyMfa]; we must not `accept()` that response.
    */
   const login = useCallback(
-    async (email, password, userId) => accept(await api.login(email, password, userId)),
+    async (email, password, userId) => {
+      const res = await api.login(email, password, userId)
+      if (res?.mfa_required) return res
+      return accept(res)
+    },
+    [accept],
+  )
+
+  /** Complete a two-step login by submitting a TOTP or backup code. */
+  const verifyMfa = useCallback(
+    async (mfaToken, code) => accept(await api.verifyMfa(mfaToken, code)),
     [accept],
   )
 
@@ -75,6 +87,36 @@ export function SessionProvider({ children }) {
     return res
   }, [])
 
+  // --- two-factor auth management (opt-in TOTP) ----------------------------
+  const mfaSetup = useCallback(() => api.mfaSetup(), [])
+  const mfaEnable = useCallback(async (code) => {
+    const res = await api.mfaEnable(code)
+    setUser((u) => (u ? { ...u, mfa_enabled: true } : u))
+    return res
+  }, [])
+  const mfaDisable = useCallback(async (password, code) => {
+    await api.mfaDisable(password, code)
+    setUser((u) => (u ? { ...u, mfa_enabled: false } : u))
+  }, [])
+
+  // --- DPDP data-principal rights ------------------------------------------
+  /** Correct the signed-in customer's own details; keeps the displayed name in sync. */
+  const updateProfile = useCallback(async (fields) => {
+    const updated = await api.updateMyProfile(fields)
+    setUser((u) => (u ? { ...u, first_name: updated.first_name, last_name: updated.last_name } : u))
+    return updated
+  }, [])
+
+  /** Erase the signed-in account, then drop the (now-invalid) session so the app
+   *  routes back to sign-in. */
+  const eraseAccount = useCallback(async (password) => {
+    await api.eraseAccount(password)
+    setToken(null)
+    setUser(null)
+    setPermissions({})
+    setAreas({ staff: false, shop: false })
+  }, [])
+
   /** True if the signed-in role has `action` on `module`. */
   const can = useCallback(
     (module, action = 'read') => Boolean(permissions?.[module]?.[action]),
@@ -86,7 +128,7 @@ export function SessionProvider({ children }) {
 
   return (
     <SessionContext.Provider
-      value={{ user, permissions, areas, loading, login, register, logout, changePassword, can, homePath }}
+      value={{ user, permissions, areas, loading, login, register, logout, changePassword, verifyMfa, mfaSetup, mfaEnable, mfaDisable, eraseAccount, can, homePath }}
     >
       {children}
     </SessionContext.Provider>
